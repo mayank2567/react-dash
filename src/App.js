@@ -1,62 +1,100 @@
 import { Component } from 'react';
 import { Element } from 'react-faux-dom';
-import * as shell from 'shelljs';
 import * as d3 from 'd3';
 import './App.css';
-import data from './data';
+// import data from './data';
+// let data2 = [];
 class App extends Component {
   state = {
-    panelone: [],
-    paneltwo: []
+    data: []
   }
-  async componentDidMount() {
+  async componentWillMount() {
     try {
-      console.log(this.state)
-      setInterval(async () => {
-        const res = shell.exec('curl -v http://134.209.148.209:9080/test -X POST -H "Content-Type: application/json"')
-        setInterval(async () => {console.log("res ", res);},3000);
+    //   console.log(this.state)
+    let res = await fetch('http://65.52.32.33:4000/')
+        res = await res.json();
+        res = JSON.parse(res);
+        res.time = new Date().getTime();
+
+        //  console.log("res ", res);
+        console.log("res ", this.state);
+
         // debugger
-        // this.setState({
-        //   panelone: dataPanelone,
-        //   paneltwo: dataPaneltwo,
+        this.setState(prevState => ({
+            data: [...prevState.data, res]
+        }))
+      setInterval(async () => {
+        res = await fetch('http://65.52.32.33:4000/')
+        res= await res.json();
+        res= JSON.parse(res);
+        res.time = new Date().getTime();
+        // this.state.data.map(function (a, b) {
+        //     return a.time - b.time
         // })
-      }, 5000);
+        if(this.state.data.length>12){
+            this.state.data.sort(function (a, b) {
+                return b.time - a.time
+            })
+
+            this.state.data.pop()
+            // debugger
+//  console.log("a ", a);
+            // this.setState(prevState => {
+            //     prevState.data.pop();
+            //     return {
+            //         data: prevState.data
+            //     }
+            // })    
+            
+        }
+        //  console.log("res ", res);
+        console.log("res ", this.state);
+
+        // debugger
+        this.setState(prevState => ({
+            data: [...prevState.data, res]
+          }))
+        this.setState(prevState => ({
+            data: [...prevState.data.sort((a, b) => b.age - a.age)]
+          }))
+      }, 500);
     } catch(e) {
       console.log(e);
     }
 }
 
-    plot(chart, width, height) {
+    plot(chart, width, height, x, y) {
         // create scales!
+
         const xScale = d3.scaleBand()
-            .domain(data.map(d => d.country))
+            .domain(this.state.data.map(d => d[x]))
             .range([0, width]);
         const yScale = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.value)])
+            .domain([0, d3.max(this.state.data, d => d[y])])
             .range([height, 0]);
-        const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+        const colorScale = d3.scaleOrdinal(d3.schemePastel2);
 
         chart.selectAll('.bar')
-            .data(data)
+            .data(this.state.data)
             .enter()
             .append('rect')
             .classed('bar', true)
-            .attr('x', d => xScale(d.country))
-            .attr('y', d => yScale(d.value))
-            .attr('height', d => (height - yScale(d.value)))
-            .attr('width', d => xScale.bandwidth())
+            .attr('x', d => xScale(d[x]))
+            .attr('y', d => yScale(d[y]))
+            .attr('height', d => (height - yScale(d[y])))
+            .attr('width', d => xScale.bandwidth() - 10)
             .style('fill', (d, i) => colorScale(i));
 
-        chart.selectAll('.bar-label')
-            .data(data)
-            .enter()
-            .append('text')
-            .classed('bar-label', true)
-            .attr('x', d => xScale(d.country) + xScale.bandwidth()/2)
-            .attr('dx', 0)
-            .attr('y', d => yScale(d.value))
-            .attr('dy', -6)
-            .text(d => d.value);
+        // chart.selectAll('.bar-label')
+        //     .data(this.state.data)
+        //     .enter()
+        //     .append('text')
+        //     .classed('bar-label', true)
+        //     .attr('x', d => xScale(d[x]) + xScale.bandwidth()/2)
+        //     .attr('dx', 0)
+        //     .attr('y', d => yScale(d[y]))
+        //     .attr('dy', -6)
+        //     .text(d => d[y]);
 
         const xAxis = d3.axisBottom()
             .scale(xScale);
@@ -82,7 +120,7 @@ class App extends Component {
             .attr('fill', '#000')
             .style('font-size', '20px')
             .style('text-anchor', 'middle')
-            .text('Country');    
+            .text('Age');    
             
         chart.select('.y.axis')
             .append('text')
@@ -92,20 +130,21 @@ class App extends Component {
             .attr('fill', '#000')
             .style('font-size', '20px')
             .style('text-anchor', 'middle')
-            .text('Government Expenditure in Billion Dollars');   
+            .text('Salary');   
             
-        const yGridlines = d3.axisLeft()
-            .scale(yScale)
-            .ticks(5)
-            .tickSize(-width,0,0)
-            .tickFormat('')
+        // const yGridlines = d3.axisLeft()
+        //     .scale(yScale)
+        //     .ticks(5)
+        //     .tickSize(-width,0,0)
+        //     .tickFormat('')
 
-        chart.append('g')
-            .call(yGridlines)
-            .classed('gridline', true);
+        // chart.append('g')
+        //     .call(yGridlines)
+        //     .classed('gridline', true);
     }
 
     drawChart() {
+        
         const width = 800;
         const height = 450;
 
@@ -129,14 +168,16 @@ class App extends Component {
 
         const chartWidth = width - margin.left - margin.right;
         const chartHeight = height - margin.top - margin.bottom
-        this.plot(chart, chartWidth, chartHeight);
-        this.plot(chart, chartWidth, chartHeight);
+        // this.plot(chart, chartWidth, chartHeight);
+        this.plot(chart, chartWidth, chartHeight, 'age', 'salary');
 
         return el.toReact();
     }
 
     render() {
-        return this.drawChart();
+        return (
+            this.drawChart()
+            );
     }
 }
 
