@@ -7,10 +7,12 @@
     "axois": "^1.0.0",
     "curl-request": "^1.1.1",
     "d3": "^5.9.2",
+    "d3-simple-slider": "^1.5.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "react-faux-dom": "^4.5.0",
     "react-scripts": "3.0.0",
+    "react-svg-pan-zoom": "^3.1.0",
     "shelljs": "^0.8.3"
   },
   "scripts": {
